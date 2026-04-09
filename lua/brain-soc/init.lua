@@ -76,12 +76,6 @@ vim.api.nvim_create_user_command("BrainSOCSetup", function()
   end)
 end, {})
 
-vim.api.nvim_create_user_command("BrainSOCRefresh", function()
-  read_soc_file()
-  vim.cmd("redrawstatus!")
-  print(string.format("🧠 SOC %d%%", math.floor(cache.soc + 0.5)))
-end, {})
-
 vim.defer_fn(function()
   local opts = M._opts or {}
   write_config(opts)
