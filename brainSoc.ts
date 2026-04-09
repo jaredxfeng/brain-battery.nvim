@@ -30,7 +30,7 @@ dotenv.config();
 
 // ------------------- CONFIGURATION (edit these) -------------------
 const CAPACITY_MINUTES = 300; // Your total coding capacity before brain is "empty" (e.g. 5 hours). Adjust to your preference.
-const CODING_INTERVAL_THRESHOLD = 5; // Minimum minutes coded in the 15-min window to count as "coding"
+const CODING_INTERVAL_THRESHOLD = 3; // Minimum minutes coded in the 15-min window to count as "coding"
 const DRAIN_RATE = 1.1; // Fatigue increases slightly faster than raw time (feels realistic)
 const RECHARGE_MINUTES_PER_BREAK = 30; // How much fatigue a break interval recovers (recharges faster than drain)
 
