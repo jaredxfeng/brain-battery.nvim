@@ -38,8 +38,6 @@ async function loadConfig(): Promise<void> {
   }
 }
 
-await loadConfig();
-
 const capacityMinutes = CONFIG.capacityMinutes;
 const drainRate = CONFIG.drainRate;
 const codingThresholdMinutes = CONFIG.codingThresholdMinutes;
@@ -231,6 +229,7 @@ function updateState(
 }
 
 async function runOnce() {
+  await loadConfig();
   const state: State = await loadState();
   const todayStr = new Date().toISOString().split("T")[0];
   const currentTotalSeconds = await fetchTodayTotalSeconds();
