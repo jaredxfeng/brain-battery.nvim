@@ -48,10 +48,16 @@ if (!WAKATIME_API_KEY || !SLACK_TOKEN) {
   process.exit(1);
 }
 
+enum IntervalStatus {
+  coding = "coding",
+  break = "break",
+}
+
 interface State {
   last_date: string;
   last_total_seconds: number;
   current_fatigue_minutes: number;
+  current_interval_status: IntervalStatus;
 }
 
 async function loadState(): Promise<State> {
@@ -59,7 +65,12 @@ async function loadState(): Promise<State> {
     const data = await fs.readFile(STATE_FILE, "utf-8");
     return JSON.parse(data);
   } catch {
-    return { last_date: "", last_total_seconds: 0, current_fatigue_minutes: 0 };
+    return {
+      last_date: "",
+      last_total_seconds: 0,
+      current_fatigue_minutes: 0,
+      current_interval_status: IntervalStatus.break,
+    };
   }
 }
 
@@ -85,9 +96,7 @@ async function fetchTodayTotalSeconds(): Promise<number> {
       `WakaTime API error: ${response.status} ${response.statusText}`,
     );
   }
-
   const result: any = await response.json();
-  // grand_total.total_seconds is the cumulative coding time today
   return result.data?.[0]?.grand_total?.total_seconds ?? 0;
 }
 
@@ -144,59 +153,63 @@ async function writeSOCFile(soc: number): Promise<void> {
   console.log(`Brain SOC written to ${SOC_FILE}`);
 }
 
-async function runOnce() {
-  console.log(`\nBrain SOC update started at ${new Date().toISOString()}`);
-
-  const state = await loadState();
-  const todayStr = new Date().toISOString().split("T")[0];
-
-  const currentTotalSeconds = await fetchTodayTotalSeconds();
-
+function getDeltaMinutes(
+  state: State,
+  todayStr: string,
+  currentTotalSeconds: number,
+): number {
   let deltaSeconds = 0;
   if (state.last_date === todayStr) {
     deltaSeconds = Math.max(0, currentTotalSeconds - state.last_total_seconds);
   } else {
-    // New day → full recharge
-    console.log("New day detected – resetting fatigue");
     state.current_fatigue_minutes = 0;
-    deltaSeconds = currentTotalSeconds; // use whatever has been coded today so far
+    deltaSeconds = currentTotalSeconds;
   }
 
   const deltaMinutes = deltaSeconds / 60;
+  return deltaMinutes;
+}
+
+function updateState(
+  state: State,
+  todayStr: string,
+  currentTotalSeconds: number,
+): void {
+  const deltaMinutes = getDeltaMinutes(state, todayStr, currentTotalSeconds);
   const isCodingInterval = deltaMinutes > CODING_INTERVAL_THRESHOLD;
 
   if (isCodingInterval) {
     const drain = deltaMinutes * DRAIN_RATE;
-    state.current_fatigue_minutes += drain;
-    console.log(`Coding interval (+${drain.toFixed(1)} min fatigue)`);
+    state.current_fatigue_minutes = Math.min(
+      state.current_fatigue_minutes + drain,
+      CAPACITY_MINUTES,
+    );
+    state.current_interval_status = IntervalStatus.coding;
   } else {
     state.current_fatigue_minutes = Math.max(
       0,
       state.current_fatigue_minutes - RECHARGE_MINUTES_PER_BREAK,
     );
-    console.log(`Break interval (-${RECHARGE_MINUTES_PER_BREAK} min fatigue)`);
+    state.current_interval_status = IntervalStatus.break;
   }
 
-  // Safety cap
-  state.current_fatigue_minutes = Math.min(
-    state.current_fatigue_minutes,
-    CAPACITY_MINUTES * 1.5,
-  );
-
-  const soc = calculateBrainSOC(state.current_fatigue_minutes);
-
-  // Persist state
   state.last_date = todayStr;
   state.last_total_seconds = currentTotalSeconds;
+}
+
+async function runOnce() {
+  const state: State = await loadState();
+  const todayStr = new Date().toISOString().split("T")[0];
+  const currentTotalSeconds = await fetchTodayTotalSeconds();
+  updateState(state, todayStr, currentTotalSeconds);
+  const soc = calculateBrainSOC(state.current_fatigue_minutes);
   await saveState(state);
 
   // Do the two required actions
   await writeSOCFile(soc);
   await updateSlackStatus(soc);
 
-  console.log(
-    `Brain SOC: ${soc.toFixed(1)}% | Fatigue: ${state.current_fatigue_minutes.toFixed(1)}/${CAPACITY_MINUTES} min`,
-  );
+  console.log(`Brain SOC: ${soc}% `);
 }
 
 runOnce().catch((err) => {
