@@ -104,7 +104,7 @@ function calculateBrainSOC(fatigue: number): number {
 }
 
 function getEmoji(soc: number, isCoding: IntervalStatus): string {
-  if (!isCoding) return ":battery-charging:";
+  if (isCoding === IntervalStatus.break) return ":battery-charging:";
   if (soc >= 70) return ":battery-plenty:";
   if (soc >= 40) return ":battery-half:";
   if (soc >= 15) return ":battery-few:";
