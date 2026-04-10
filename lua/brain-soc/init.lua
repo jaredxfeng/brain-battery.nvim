@@ -9,6 +9,13 @@ local SOC_FILE = vim.fn.expand("~/.brain-soc.json")
 local cache = { soc = nil, text = "🧠 --%", timestamp = 0 }
 local CACHE_TTL = 60 -- seconds (refreshes automatically)
 
+local last_modal = {
+  critical = 0,  -- timestamp of last ≤10% modal
+  warning = 0,   -- timestamp of last 11-20% modal
+}
+local CRITICAL_COOLDOWN = 300   -- 5 minutes in seconds
+local WARNING_COOLDOWN = 900    -- 15 minutes in seconds
+
 vim.api.nvim_create_user_command("BrainSOCConfig", function(opts)
   -- No arguments → show current config
   if #opts.fargs == 0 then
@@ -53,6 +60,86 @@ end, {
   end,
 })
 
+local function should_show_modal(soc)
+  if not soc or soc > 20 then
+    return false
+  end
+
+  local now = os.time()
+  local is_critical = soc <= 10
+
+  if is_critical then
+    if now - last_modal.critical >= CRITICAL_COOLDOWN then
+      last_modal.critical = now
+      return true
+    end
+  else
+    if now - last_modal.warning >= WARNING_COOLDOWN then
+      last_modal.warning = now
+      return true
+    end
+  end
+
+  return false
+end
+
+local function create_centered_warning(soc)
+  local is_critical = soc <= 10
+  local title = "The Brain SOC"
+  local hl_group = is_critical and "DiagnosticError" or "DiagnosticWarn"  -- matches your lualine colors
+
+  local lines = {
+    "",
+    string.format("      🧠 : %d%%      ", math.floor(soc + 0.5)),
+    "",
+    is_critical and "   Take a break or your brain breaks.   " or "   Consider a short break soon.   ",
+    "",
+    "   Press <Esc> or q to dismiss   ",
+    ""
+  }
+
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.bo[buf].modifiable = false
+  vim.bo[buf].bufhidden = "wipe"
+
+  local width = 52
+  local height = #lines
+
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = "editor",
+    width = width,
+    height = height,
+    col = math.floor((vim.o.columns - width) / 2),
+    row = math.floor((vim.o.lines - height) / 2),
+    style = "minimal",
+    border = "rounded",
+    title = title,
+    title_pos = "center",
+    zindex = 250,
+  })
+
+  -- Color the modal
+  vim.wo[win].winhighlight = "Normal:NormalFloat,FloatBorder:" .. hl_group
+
+  -- Close helpers
+  local function close()
+    if vim.api.nvim_win_is_valid(win) then
+      vim.api.nvim_win_close(win, true)
+    end
+  end
+
+  vim.keymap.set("n", "<Esc>", close, { buffer = buf, silent = true, nowait = true })
+  vim.keymap.set("n", "q", close, { buffer = buf, silent = true, nowait = true })
+
+  -- Yellow warnings auto-dismiss after 8 seconds (red stays until manually closed)
+  if not is_critical then
+    vim.defer_fn(close, 8000)
+  end
+
+  return win
+end
+
 local function readSocFile()
   local ok, file = pcall(vim.fn.readfile, SOC_FILE)
   if not ok or #file == 0 then
@@ -72,6 +159,11 @@ local function readSocFile()
   local raw_text = string.format("🧠 %d%%", math.floor(cache.soc + 0.5))
   cache.text = raw_text:gsub("%%", "%%%%")
   cache.timestamp = os.time()
+
+  -- Automatic centered warning modal
+  if should_show_modal(cache.soc) then
+    create_centered_warning(cache.soc)
+  end
 end
 
 local function ensure_fresh_cache()
