@@ -75,12 +75,15 @@ async function saveState(state: State): Promise<void> {
   await fs.writeFile(STATE_FILE, JSON.stringify(state, null, 2));
 }
 
-async function fetchTotalSeconds(start?: string, end?: string): Promise<number> {
+async function fetchTotalSeconds(
+  start?: string,
+  end?: string,
+): Promise<number> {
   const isFetchingToday = !start && !end;
 
   const url = isFetchingToday
     ? "https://wakatime.com/api/v1/users/current/summaries?start=today&end=today"
-    : `https://wakatime.com/api/v1/users/current/summaries?` + 
+    : `https://wakatime.com/api/v1/users/current/summaries?` +
       `start=${encodeURIComponent(start!)}&end=${encodeURIComponent(end!)}`;
 
   const auth = Buffer.from(`${WAKATIME_API_KEY}:`).toString("base64");
@@ -98,8 +101,8 @@ async function fetchTotalSeconds(start?: string, end?: string): Promise<number> 
   const result: any = await response.json();
 
   return isFetchingToday
-    ? result.data?.[0]?.grand_total?.total_seconds ?? 0
-    : result.cumulative_total?.seconds ?? 0;
+    ? (result.data?.[0]?.grand_total?.total_seconds ?? 0)
+    : (result.cumulative_total?.seconds ?? 0);
 }
 
 function calculateBrainSOC(fatigue: number): number {
@@ -118,13 +121,24 @@ function getEmoji(soc: number, isCoding: IntervalStatus): string {
 }
 
 async function checkIfSlackStatusCanBeUpdated(): Promise<boolean> {
-  const getResponse = await fetch("https://slack.com/api/users.profile.get", {
+  const profilePromise = fetch("https://slack.com/api/users.profile.get", {
     method: "GET",
     headers: {
       Authorization: `Bearer ${SLACK_TOKEN}`,
     },
-  });
-  const getResult: any = await getResponse.json();
+  }).then((res) => res.json());
+
+  const presencePromise = fetch("https://slack.com/api/users.getPresence", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${SLACK_TOKEN}`,
+    },
+  }).then((res) => res.json());
+
+  const [getResult, presenceResult]: any = await Promise.all([
+    profilePromise,
+    presencePromise,
+  ]);
 
   if (!getResult.ok) {
     console.error(
@@ -133,6 +147,20 @@ async function checkIfSlackStatusCanBeUpdated(): Promise<boolean> {
     );
     return false; // safety: don't update if we can't check
   }
+
+  if (!presenceResult.ok) {
+    console.error(
+      "Failed to fetch Slack presence:",
+      presenceResult.error || presenceResult,
+    );
+    return false; // safety: don't update if we can't check
+  }
+
+  // Return false if user is away (we only want to update when active)
+  if (presenceResult.presence === "away") {
+    return false;
+  }
+
   const currentEmoji = getResult.profile?.status_emoji || "";
 
   if (currentEmoji && !currentEmoji.startsWith(":battery-")) {
@@ -182,12 +210,9 @@ async function writeSOCFile(soc: number): Promise<void> {
   await fs.writeFile(SOC_FILE, JSON.stringify(payload, null, 2));
 }
 
-async function updateStateLive(
-  state: State,
-  now: string,
-): Promise<void> {
+async function updateStateLive(state: State, now: string): Promise<void> {
   const deltaCodingSeconds = await fetchTotalSeconds(state.last_date_time, now);
-  const deltaCodingMinutes = deltaCodingSeconds / SECONDS_IN_MINUTES
+  const deltaCodingMinutes = deltaCodingSeconds / SECONDS_IN_MINUTES;
   const isCodingInterval =
     deltaCodingMinutes > userConfig.codingThresholdMinutes;
 
@@ -208,13 +233,10 @@ async function updateStateLive(
   state.last_date_time = now;
 }
 
-async function updateStateReplay(
-  state: State,
-  now: string,
-): Promise<void> {
+async function updateStateReplay(state: State, now: string): Promise<void> {
   const deltaCodingSeconds = await fetchTotalSeconds(state.last_date_time, now);
   const deltaCodingMinutes = deltaCodingSeconds / SECONDS_IN_MINUTES;
-  const diffInMinutes = diffMinutes(state, now) 
+  const diffInMinutes = diffMinutes(state, now);
   const drain = deltaCodingMinutes * userConfig.drainRate;
   const breakMinutes = Math.max(diffInMinutes - deltaCodingMinutes, 0);
   const rechargeMinutes =
