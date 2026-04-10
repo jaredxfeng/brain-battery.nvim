@@ -17,6 +17,9 @@ Powered by WakaTime + a 15-minute cron job that updates your Slack status too.
 ```lua
 return {
   "jaredxfeng/brain-soc.nvim",
+  dependencies = {
+    { "nvim-lualine/lualine.nvim", optional = true },
+  }
   lazy = false,
   config = function(_, opts)
     require("brain-soc")._opts = opts,
@@ -30,11 +33,27 @@ return {
 }
 ```
 
-2. In your neovim, run `:BrainSOCSetup` to input your wakatime API key and the Slack OAuth Token of The Brain SOC Slack App.
+2. Create / edit the lualine config file `~/.config/nvim/lua/plugins/lualine.lua` with these lines:
 
-3. Add a line inside your `crontab -e`: `*/15 * * * * cd ~/.local/share/nvim/lazy/brain-soc.nvim/bin && ./run-brain-soc.sh`. Save and exit.
+```lua
+return {
+  "nvim-lualine/lualine.nvim",
+  opts = function(_, opts)
+    opts.sections = opts.sections or {}
+    opts.sections.lualine_x = vim.list_extend(
+      opts.sections.lualine_x or {},
+      { require("brain-soc") }
+    )
+    return opts
+  end,
+}
+```
 
-4. Restart your neovim and continue to enjoy coding until it stops you!
+3. In your neovim, run `:BrainSOCSetup` to input your wakatime API key and the Slack OAuth Token of The Brain SOC Slack App.
+
+4. Add a line inside your `crontab -e`: `*/15 * * * * cd ~/.local/share/nvim/lazy/brain-soc.nvim/bin && ./run-brain-soc.sh`. Save and exit.
+
+And you are done. Restart your neovim and continue to enjoy coding until it stops you!
 
 ## Parameters in `opts`
 

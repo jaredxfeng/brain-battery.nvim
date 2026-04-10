@@ -137,4 +137,19 @@ vim.defer_fn(function()
   })
 end, 1000)
 
+function M.lualine_component()
+  return {
+    M.get_status,
+    cond = function()
+      return vim.fn.filereadable(SOC_FILE) == 1
+    end,
+  }
+end
+
+setmetatable(M, {
+  __call = function()
+    return M.lualine_component()
+  end,
+})
+
 return M
