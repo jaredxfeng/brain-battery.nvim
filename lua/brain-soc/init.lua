@@ -29,6 +29,7 @@ vim.api.nvim_create_user_command("BrainSOCConfig", function(opts)
       end
       updates[key] = value
     else
+      notify.warn("Invalid value: " .. val_str)
       notify.warn("Invalid format. Use: key=value (e.g. drain_rate=1)")
     end
   end
