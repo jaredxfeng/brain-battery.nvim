@@ -7,7 +7,7 @@ M.defaults = {
   capacity_minutes = 300,
   drain_rate = 1.1,
   coding_threshold_minutes = 3,
-  recharging_minutes_in_break = 25,
+  recharge_minutes_per_break = 25,
 }
 
 M.options = vim.deepcopy(M.defaults)
@@ -21,7 +21,7 @@ local function to_backend_format(opts)
     capacityMinutes = opts.capacity_minutes,
     drainRate = opts.drain_rate,
     codingThresholdMinutes = opts.coding_threshold_minutes,
-    recharingMinutesInBreak = opts.recharging_minutes_in_break,
+    rechargeMinutesPerBreak = opts.recharge_minutes_per_break,
   }
 end
 
@@ -73,7 +73,7 @@ function M.load()
     M.options.coding_threshold_minutes = backend_config.codingThresholdMintues
   end
   if backend_config.rechargingMintuesInBreak ~= nil then
-    M.options.recharging_minutes_in_break = backend_config.rechargingMintuesInBreak
+    M.options.recharge_minutes_per_break = backend_config.rechargeMintuesPerBreak
   end
 end
 
