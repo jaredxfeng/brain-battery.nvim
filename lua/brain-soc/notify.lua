@@ -1,12 +1,11 @@
 local M = {}
 
---- Wrapper around vim.notify with a default title for your plugin.
 ---@param msg string
 ---@param level? integer vim.log.levels.*
 ---@param opts? table
 local function notify(msg, level, opts)
   opts = opts or {}
-  opts.title = opts.title or "The Brain SOC" -- ← your custom title here
+  opts.title = "The Brain SOC"
   vim.notify(msg, level, opts)
 end
 
