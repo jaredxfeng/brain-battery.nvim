@@ -90,7 +90,7 @@ local function create_centered_warning(soc)
 
   local lines = {
     "",
-    string.format("🧠 state of charge: %d%%      ", math.floor(soc + 0.5)),
+    string.format("   🧠 state of charge: %d%%      ", math.floor(soc + 0.5)),
     "",
     is_critical and "   Take a break or your brain breaks.   " or "   Consider a short break soon.   ",
     "",
