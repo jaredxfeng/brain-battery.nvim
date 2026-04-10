@@ -4,7 +4,7 @@ local CONFIG_DIR = vim.fn.expand("~/.config/brain-soc")
 local CONFIG_FILE = CONFIG_DIR .. "/config.json"
 local SOC_FILE = vim.fn.expand("~/.brain-soc.json")
 local cache = { soc = nil, text = "🧠 SOC --%", timestamp = 0 }
-local CACHE_TTL = 60 * 15  -- seconds (refreshes automatically)
+local CACHE_TTL = 60 -- seconds (refreshes automatically)
 
 local function readSocFile()
   local ok, file = pcall(vim.fn.readfile, SOC_FILE)
