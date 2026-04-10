@@ -16,7 +16,6 @@ enum IntervalStatus {
 
 interface State {
   last_date_time: string;
-  last_total_seconds: number;
   current_fatigue_minutes: number;
   current_interval_status: IntervalStatus;
 }
@@ -66,7 +65,6 @@ async function loadState(): Promise<State> {
   } catch {
     return {
       last_date_time: "",
-      last_total_seconds: 0,
       current_fatigue_minutes: 0,
       current_interval_status: IntervalStatus.break,
     };
@@ -182,27 +180,14 @@ async function writeSOCFile(soc: number): Promise<void> {
     fatigue_minutes: Number(userConfig.capacityMinutes.toFixed(1)), // for plugin debugging if needed
   };
   await fs.writeFile(SOC_FILE, JSON.stringify(payload, null, 2));
-  console.log(`Brain SOC written to ${SOC_FILE}`);
 }
 
-function getDeltaCodingMinutes(
-  state: State,
-  currentTotalSeconds: number,
-): number {
-  const deltaSeconds = Math.max(
-    0,
-    currentTotalSeconds - state.last_total_seconds,
-  );
-  const deltaMinutes = deltaSeconds / SECONDS_IN_MINUTES;
-  return deltaMinutes;
-}
-
-function updateStateLive(
+async function updateStateLive(
   state: State,
   now: string,
-  currentTotalSeconds: number,
-): void {
-  const deltaCodingMinutes = getDeltaCodingMinutes(state, currentTotalSeconds);
+): Promise<void> {
+  const deltaCodingSeconds = await fetchTotalSeconds(state.last_date_time, now);
+  const deltaCodingMinutes = deltaCodingSeconds / SECONDS_IN_MINUTES
   const isCodingInterval =
     deltaCodingMinutes > userConfig.codingThresholdMinutes;
 
@@ -221,17 +206,15 @@ function updateStateLive(
     state.current_interval_status = IntervalStatus.break;
   }
   state.last_date_time = now;
-  state.last_total_seconds = currentTotalSeconds;
 }
 
 async function updateStateReplay(
   state: State,
   now: string,
 ): Promise<void> {
-  const deltaSeconds = await fetchTotalSeconds(state.last_date_time, now);
-  const deltaCodingMinutes = deltaSeconds / 60;
-  const currentDayTotalCodingSeconds = await fetchTotalSeconds();
-  const diffInMinutes = diffMinutes(state, now) ;
+  const deltaCodingSeconds = await fetchTotalSeconds(state.last_date_time, now);
+  const deltaCodingMinutes = deltaCodingSeconds / SECONDS_IN_MINUTES;
+  const diffInMinutes = diffMinutes(state, now) 
   const drain = deltaCodingMinutes * userConfig.drainRate;
   const breakMinutes = Math.max(diffInMinutes - deltaCodingMinutes, 0);
   const rechargeMinutes =
@@ -239,7 +222,6 @@ async function updateStateReplay(
   state.current_fatigue_minutes += drain;
   state.current_fatigue_minutes -= rechargeMinutes;
   state.current_interval_status = IntervalStatus.coding;
-  state.last_total_seconds = currentDayTotalCodingSeconds;
   state.last_date_time = now;
 }
 
@@ -261,10 +243,9 @@ async function runOnce() {
 
   if (shouldRefetch) {
     if (isNewSession) {
-      updateStateReplay(state, now);
+      await updateStateReplay(state, now);
     } else {
-      const currentTotalSeconds = await fetchTotalSeconds();
-      updateStateLive(state, now, currentTotalSeconds);
+      await updateStateLive(state, now);
     }
     await saveState(state);
   }
