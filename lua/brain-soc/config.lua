@@ -70,10 +70,6 @@ end
 -- Load saved config from disk. Called once at startup
 function M.load()
   if vim.fn.filereadable(CONFIG_FILE) == 0 then
-    return
-  end
-
-  if vim.fn.filereadable(CONFIG_FILE) == 0 then
     -- First run → write defaults to disk immediately
     M.save()
     return
