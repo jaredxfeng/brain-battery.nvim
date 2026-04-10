@@ -25,7 +25,7 @@ interface Config {
   capacityMinutes: number;
   drainRate: number;
   codingThresholdMinutes: number;
-  rechargeMinutesPerBreak: number; 
+  rechargeMinutesPerBreak: number;
 }
 
 const MS_IN_MINUTES = 1000 * 60;
@@ -178,7 +178,10 @@ async function writeSOCFile(soc: number): Promise<void> {
   console.log(`Brain SOC written to ${SOC_FILE}`);
 }
 
-function getDeltaCodingMinutes(state: State, currentTotalSeconds: number): number {
+function getDeltaCodingMinutes(
+  state: State,
+  currentTotalSeconds: number,
+): number {
   const deltaSeconds = Math.max(
     0,
     currentTotalSeconds - state.last_total_seconds,
@@ -193,7 +196,8 @@ function updateStateLive(
   currentTotalSeconds: number,
 ): void {
   const deltaCodingMinutes = getDeltaCodingMinutes(state, currentTotalSeconds);
-  const isCodingInterval = deltaCodingMinutes > userConfig.codingThresholdMinutes;
+  const isCodingInterval =
+    deltaCodingMinutes > userConfig.codingThresholdMinutes;
 
   if (isCodingInterval) {
     const drainMinutes = deltaCodingMinutes * userConfig.drainRate;
@@ -216,13 +220,14 @@ function updateStateLive(
 function updateStateReplay(
   state: State,
   now: string,
-  currentTotalSeconds: number)
-: void {
+  currentTotalSeconds: number,
+): void {
   const diffInMinutes = diffMinutes(state, now);
   const deltaCodingMinutes = getDeltaCodingMinutes(state, currentTotalSeconds);
-  const drain = deltaCodingMinutes * userConfig.drainRate; 
+  const drain = deltaCodingMinutes * userConfig.drainRate;
   const breakMinutes = Math.max(diffInMinutes - deltaCodingMinutes, 0);
-  const rechargeMinutes = breakMinutes / MINUTES_IN_INTERVALS * userConfig.rechargeMinutesPerBreak;
+  const rechargeMinutes =
+    (breakMinutes / MINUTES_IN_INTERVALS) * userConfig.rechargeMinutesPerBreak;
   state.current_fatigue_minutes += drain;
   state.current_fatigue_minutes -= rechargeMinutes;
   state.current_interval_status = IntervalStatus.coding;
