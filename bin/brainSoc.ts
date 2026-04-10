@@ -231,7 +231,7 @@ function updateState(
 async function runOnce() {
   await loadConfig();
   console.log("Config loaded");
-  console.log(`Configs: ${CONFIG}`)
+  console.log(`Configs: ${JSON.stringify(CONFIG)}`)
   const state: State = await loadState();
   const todayStr = new Date().toISOString().split("T")[0];
   const currentTotalSeconds = await fetchTodayTotalSeconds();
