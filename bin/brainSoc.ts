@@ -77,10 +77,13 @@ async function saveState(state: State): Promise<void> {
   await fs.writeFile(STATE_FILE, JSON.stringify(state, null, 2));
 }
 
-async function fetchTodayTotalSeconds(): Promise<number> {
-  // WakaTime supports "today" as a special value and automatically respects your account timezone
-  const url =
-    "https://wakatime.com/api/v1/users/current/summaries?start=today&end=today";
+async function fetchTotalSeconds(start?: string, end?: string): Promise<number> {
+  const isFetchingToday = !start && !end;
+
+  const url = isFetchingToday
+    ? "https://wakatime.com/api/v1/users/current/summaries?start=today&end=today"
+    : `https://wakatime.com/api/v1/users/current/summaries?` + 
+      `start=${encodeURIComponent(start!)}&end=${encodeURIComponent(end!)}`;
 
   const auth = Buffer.from(`${WAKATIME_API_KEY}:`).toString("base64");
   const response = await fetch(url, {
@@ -88,13 +91,17 @@ async function fetchTodayTotalSeconds(): Promise<number> {
       Authorization: `Basic ${auth}`,
     },
   });
+
   if (!response.ok) {
     throw new Error(
       `WakaTime API error: ${response.status} ${response.statusText}`,
     );
   }
   const result: any = await response.json();
-  return result.data?.[0]?.grand_total?.total_seconds ?? 0;
+
+  return isFetchingToday
+    ? result.data?.[0]?.grand_total?.total_seconds ?? 0
+    : result.cumulative_total?.seconds ?? 0;
 }
 
 function calculateBrainSOC(fatigue: number): number {
@@ -217,13 +224,14 @@ function updateStateLive(
   state.last_total_seconds = currentTotalSeconds;
 }
 
-function updateStateReplay(
+async function updateStateReplay(
   state: State,
   now: string,
-  currentTotalSeconds: number,
-): void {
-  const diffInMinutes = diffMinutes(state, now);
-  const deltaCodingMinutes = getDeltaCodingMinutes(state, currentTotalSeconds);
+): Promise<void> {
+  const deltaSeconds = await fetchTotalSeconds(state.last_date_time, now);
+  const deltaCodingMinutes = deltaSeconds / 60;
+  const currentDayTotalCodingSeconds = await fetchTotalSeconds();
+  const diffInMinutes = diffMinutes(state, now) ;
   const drain = deltaCodingMinutes * userConfig.drainRate;
   const breakMinutes = Math.max(diffInMinutes - deltaCodingMinutes, 0);
   const rechargeMinutes =
@@ -231,7 +239,7 @@ function updateStateReplay(
   state.current_fatigue_minutes += drain;
   state.current_fatigue_minutes -= rechargeMinutes;
   state.current_interval_status = IntervalStatus.coding;
-  state.last_total_seconds = currentTotalSeconds;
+  state.last_total_seconds = currentDayTotalCodingSeconds;
   state.last_date_time = now;
 }
 
@@ -243,30 +251,19 @@ function diffMinutes(state: State, now: string): number {
   return diffInMinutes;
 }
 
-function isNewSession(state: State, now: string): boolean {
-  const diffInMinutes = diffMinutes(state, now);
-  return diffInMinutes > MINUTES_IN_INTERVALS;
-}
-
-function is15MinutesFromLastRun(state: State, now: string): boolean {
-  const diffInMinutes = diffMinutes(state, now);
-  return diffInMinutes >= MINUTES_IN_INTERVALS;
-}
-
 async function runOnce() {
   await loadConfig();
   const state: State = await loadState();
   const now = new Date().toISOString();
-  const shouldRefetch: boolean = is15MinutesFromLastRun(state, now);
+  const minutesSinceLastCall = diffMinutes(state, now);
+  const shouldRefetch: boolean = minutesSinceLastCall >= MINUTES_IN_INTERVALS;
+  const isNewSession: boolean = minutesSinceLastCall > MINUTES_IN_INTERVALS;
 
   if (shouldRefetch) {
-    const currentTotalSeconds = shouldRefetch
-      ? await fetchTodayTotalSeconds()
-      : state.current_fatigue_minutes * SECONDS_IN_MINUTES;
-
-    if (isNewSession(state, now)) {
-      updateStateReplay(state, now, currentTotalSeconds);
+    if (isNewSession) {
+      updateStateReplay(state, now);
     } else {
+      const currentTotalSeconds = await fetchTotalSeconds();
       updateStateLive(state, now, currentTotalSeconds);
     }
     await saveState(state);
