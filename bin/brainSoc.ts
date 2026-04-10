@@ -14,7 +14,7 @@ const ENV_FILE = path.join(CONFIG_DIR, ".env");
 const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
 
 dotenv.config({ path: ENV_FILE });
-//
+
 // Default values (will be overridden by config.json if it exists)
 let CONFIG = {
   capacityMinutes: 300,
@@ -230,6 +230,8 @@ function updateState(
 
 async function runOnce() {
   await loadConfig();
+  console.log("Config loaded");
+  console.log(`Configs: ${CONFIG}`)
   const state: State = await loadState();
   const todayStr = new Date().toISOString().split("T")[0];
   const currentTotalSeconds = await fetchTodayTotalSeconds();
