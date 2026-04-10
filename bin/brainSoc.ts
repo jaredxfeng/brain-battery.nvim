@@ -55,8 +55,12 @@ enum IntervalStatus {
   break = "break",
 }
 
+
+const MS_IN_DAY = 1000 * 60 * 60 * 24;
+const SECONDS_IN_MINUTES = 60;
+
 interface State {
-  last_date: string;
+  last_date_time: string;
   last_total_seconds: number;
   current_fatigue_minutes: number;
   current_interval_status: IntervalStatus;
@@ -68,7 +72,7 @@ async function loadState(): Promise<State> {
     return JSON.parse(data);
   } catch {
     return {
-      last_date: "",
+      last_date_time: "",
       last_total_seconds: 0,
       current_fatigue_minutes: 0,
       current_interval_status: IntervalStatus.break,
@@ -183,45 +187,50 @@ async function writeSOCFile(soc: number): Promise<void> {
 
 function getDeltaMinutes(
   state: State,
-  todayStr: string,
   currentTotalSeconds: number,
 ): number {
-  let deltaSeconds = 0;
-  if (state.last_date === todayStr) {
-    deltaSeconds = Math.max(0, currentTotalSeconds - state.last_total_seconds);
-  } else {
-    state.current_fatigue_minutes = 0;
-    deltaSeconds = currentTotalSeconds;
-  }
+  const deltaSeconds = Math.max(0, currentTotalSeconds - state.last_total_seconds);
   const deltaMinutes = deltaSeconds / 60;
   return deltaMinutes;
 }
 
 function updateState(
   state: State,
-  todayStr: string,
+  nowStr: string,
   currentTotalSeconds: number,
+  isDatumRefetched: boolean,
 ): void {
-  const deltaMinutes = getDeltaMinutes(state, todayStr, currentTotalSeconds);
-  const isCodingInterval = deltaMinutes > CONFIG.codingThresholdMinutes;
+  if (isDatumRefetched) {
+    const deltaMinutes = getDeltaMinutes(state, currentTotalSeconds);
+    const isCodingInterval = deltaMinutes > CONFIG.codingThresholdMinutes;
 
-  if (isCodingInterval) {
-    const drain = deltaMinutes * CONFIG.drainRate;
-    state.current_fatigue_minutes = Math.min(
-      state.current_fatigue_minutes + drain,
-      CONFIG.capacityMinutes,
-    );
-    state.current_interval_status = IntervalStatus.coding;
-  } else {
-    state.current_fatigue_minutes = Math.max(
-      0,
-      state.current_fatigue_minutes - CONFIG.rechargeMinutesPerBreak,
-    );
-    state.current_interval_status = IntervalStatus.break;
+    if (isCodingInterval) {
+      const drainMinutes = deltaMinutes * CONFIG.drainRate;
+      state.current_fatigue_minutes = Math.min(
+        state.current_fatigue_minutes + drainMinutes,
+        CONFIG.capacityMinutes,
+      );
+      state.current_interval_status = IntervalStatus.coding;
+    } else {
+      state.current_fatigue_minutes = Math.max(
+        0,
+        state.current_fatigue_minutes - CONFIG.rechargeMinutesPerBreak,
+      );
+      state.current_interval_status = IntervalStatus.break;
+    }
   }
 
-  state.last_date = todayStr;
+  state.last_date_time = nowStr;
   state.last_total_seconds = currentTotalSeconds;
+}
+
+function is15MinutesFromLastRun(state: State, nowStr: string): boolean {
+  const lastRunTime = new Date(state.last_date_time);
+  const thisRunTime = new Date(nowStr);
+  const diffInMs = thisRunTime.getTime() - lastRunTime.getTime();
+  const msInDay = 1000 * 60 * 60 * 24;
+  const diffInMinutes = Math.round(diffInMs / msInDay);
+  return diffInMinutes >= 15;
 }
 
 async function runOnce() {
@@ -229,17 +238,18 @@ async function runOnce() {
   console.log("Config loaded");
   console.log(`Configs: ${JSON.stringify(CONFIG)}`);
   const state: State = await loadState();
-  const todayStr = new Date().toISOString().split("T")[0];
-  const currentTotalSeconds = await fetchTodayTotalSeconds();
-  updateState(state, todayStr, currentTotalSeconds);
-  const soc = calculateBrainSOC(state.current_fatigue_minutes);
-  await saveState(state);
+  const nowStr = new Date().toISOString();
+  const shouldRefetch: boolean = is15MinutesFromLastRun(state, nowStr);
 
-  // Two output actions
+  const currentTotalSeconds = shouldRefetch
+    ? await fetchTodayTotalSeconds()
+    : state.current_fatigue_minutes * SECONDS_IN_MINUTES;
+
+  updateState(state, nowStr, currentTotalSeconds, shouldRefetch);
+  const soc = calculateBrainSOC(state.current_fatigue_minutes);
   await writeSOCFile(soc);
   await updateSlackStatus(soc, state);
-
-  console.log(`Brain SOC: ${soc}% `);
+  await saveState(state);
 }
 
 runOnce().catch((err) => {
