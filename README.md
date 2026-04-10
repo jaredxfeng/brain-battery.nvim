@@ -7,8 +7,8 @@ Powered by WakaTime + a 15-minute cron job that updates your Slack status too.
 
 - Periodically estimates your coding fatigue level from wakatime data.
 - Shows `🧠 87%` in your lualine (or any statusline)
+- Pops up modals that remind, convince, and later force you to have a break.
 - Protects your manual Slack status (won't overwrite if you set a different emoji)
-- Fully local — only reads `~/.brain-soc.json`
 
 ## Installation
 
