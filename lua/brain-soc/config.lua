@@ -62,6 +62,7 @@ function M.merge(new_opts)
   end
 
   M.save()
+  return vim.deepcopy(M.options)
 end
 
 -- Load saved config from disk. Called once at startup

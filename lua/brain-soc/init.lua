@@ -1,6 +1,7 @@
 local M = {}
 
 local config = require("brain-soc.config")
+config.load()
 local notify = require("brain-soc.notify")
 
 local CONFIG_DIR = vim.fn.expand("~/.config/brain-soc")
@@ -90,8 +91,8 @@ function M.get_status()
 end
 
 function M.update_config(updates)
-  config.merge(updates)
-  notify.info("Config(s) updated.")
+  local new_config = config.merge(updates)
+  notify.info("Config(s) updated:\n" .. vim.inspect(new_config))
   -- TODO: rerender SOC % after updating config?
 end
 
