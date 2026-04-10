@@ -7,7 +7,7 @@ local last_modal = {
 local CRITICAL_COOLDOWN = 300 -- 5 minutes
 local WARNING_COOLDOWN = 900 -- 15 minutes
 
--- New state for the forced rest modal (SOC == 0)
+-- State for the forced rest modal (SOC == 0)
 local forced_rest = {
   modal_win = nil,
   dim_win = nil,
@@ -39,8 +39,8 @@ local function create_dimmer()
     zindex = 240,
   })
 
-  -- Strong dim effect on everything behind the modal
-  vim.wo[win].winblend = 60
+  -- Even stronger dim effect
+  vim.wo[win].winblend = 65
   vim.wo[win].winhighlight = "Normal:NormalFloat"
 
   return win
@@ -122,42 +122,80 @@ function M.create_centered_warning(soc)
   return win
 end
 
+-- The big ASCII art from ascii.txt (exactly as provided)
+local ascii_art = {
+  "                 uuuuuuu",
+  "             uu$$$$$$$$$$$uu",
+  "          uu$$$$$$$$$$$$$$$$$uu",
+  "         u$$$$$$$$$$$$$$$$$$$$$u",
+  "        u$$$$$$$$$$$$$$$$$$$$$$$u",
+  "       u$$$$$$$$$$$$$$$$$$$$$$$$$u",
+  "       u$$$$$$$$$$$$$$$$$$$$$$$$$u",
+  '       u$$$$$$"   "$$$"   "$$$$$$u',
+  '       "$$$$"      u$u       $$$$"',
+  "        $$$u       u$u       u$$$",
+  "        $$$u      u$$$u      u$$$",
+  '         "$$$$uu$$$   $$$uu$$$$"',
+  '          "$$$$$$$"   "$$$$$$$"',
+  "            u$$$$$$$u$$$$$$$u",
+  '             u$"$"$"$"$"$"$"$u',
+  "  uuu        $$u$ $ $ $ $u$$       uuu",
+  " u$$$$        $$$$$u$u$u$$$       u$$$$",
+  '  $$$$$uu      "$$$$$$$$$"     uu$$$$$$',
+  'u$$$$$$$$$$$uu    """""    uuuu$$$$$$$$$$',
+  '$$$$"""$$$$$$$$$$uuu   uu$$$$$$$$$"""$$$"',
+  ' """      ""$$$$$$$$$$$uu ""$"""',
+  '           uuuu ""$$$$$$$$$$uuu',
+  '  u$$$uuu$$$$$$$$$uu ""$$$$$$$$$$$uuu$$$',
+  '  $$$$$$$$$$""""           ""$$$$$$$$$$$"',
+  '   "$$$$$"                      ""$$$$""',
+  '     $$$"                         $$$$"',
+}
+
 local function create_forced_rest_modal(soc)
   -- Clean up any previous forced modal first
   close_forced_rest()
 
-  -- Dim everything else (exactly as requested)
+  -- Stronger full-screen dimmer
   local dim_win = create_dimmer()
 
-  local title = " ⚠️  FORCED REST - BRAIN CRITICAL  ⚠️ "
+  local title = " ⚠️  FORCED REST — BRAIN SOC AT 0%  ⚠️ "
+
   local lines = {
     "",
-    "             🚨   YOUR BRAIN SOC IS AT 0%   🚨             ",
-    "",
-    string.format("                 State of Charge: %d%%                    ", math.floor(soc + 0.5)),
-    "",
-    "   YOU MUST TAKE A BREAK RIGHT NOW.",
-    "",
-    "   Continuing to code will cause permanent damage.",
-    "",
-    "   • Stand up and move around",
-    "   • Drink water",
-    "   • Look at something far away (20+ feet)",
-    "   • Rest your eyes and mind",
-    "",
-    "   This modal will disappear automatically",
-    "   when your SOC recovers to 10% or higher.",
-    "",
-    "   ❤️  Protect your brain  ❤️",
+    "                   🚨   YOUR BRAIN IS AT 0%   🚨",
     "",
   }
+
+  -- Insert the full ASCII art
+  for _, line in ipairs(ascii_art) do
+    table.insert(lines, line)
+  end
+
+  table.insert(lines, "")
+  table.insert(lines, string.format("               State of Charge: %d%%               ", math.floor(soc + 0.5)))
+  table.insert(lines, "")
+  table.insert(lines, "   YOU MUST TAKE A BREAK RIGHT NOW.")
+  table.insert(lines, "   Continuing to code will seriously damage your brain.")
+  table.insert(lines, "")
+  table.insert(lines, "   • Stand up and move around")
+  table.insert(lines, "   • Drink water")
+  table.insert(lines, "   • Look at something far away (20-20-20 rule)")
+  table.insert(lines, "   • Rest your eyes and mind")
+  table.insert(lines, "")
+  table.insert(lines, "   This modal will disappear automatically")
+  table.insert(lines, "   when your SOC recovers to 10% or higher.")
+  table.insert(lines, "")
+  table.insert(lines, "                ❤️   PROTECT YOUR BRAIN   ❤️")
+  table.insert(lines, "")
 
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.bo[buf].modifiable = false
   vim.bo[buf].bufhidden = "wipe"
 
-  local width = 78
+  -- Even larger modal (width 92 to comfortably fit the huge ASCII art)
+  local width = 92
   local height = #lines
 
   local modal_win = vim.api.nvim_open_win(buf, true, {
@@ -174,39 +212,36 @@ local function create_forced_rest_modal(soc)
   })
 
   vim.wo[modal_win].winhighlight = "Normal:NormalFloat,FloatBorder:DiagnosticError"
-  -- Slight transparency on the modal itself for extra intensity
-  vim.wo[modal_win].winblend = 5
+  vim.wo[modal_win].winblend = 0 -- solid, no transparency on the modal itself
 
   forced_rest.modal_win = modal_win
   forced_rest.dim_win = dim_win
 
-  -- NO keymaps to close the modal (as requested)
-  -- User cannot dismiss it manually
+  -- NO keymaps → completely forced (user cannot dismiss manually)
 end
 
 function M.show_if_needed(soc)
-  -- === FORCED REST LOGIC (new feature) ===
+  -- Forced rest modal has absolute priority
   if forced_rest.modal_win then
-    -- Modal is already open → close it only when SOC recovers
     if soc and soc >= 10 then
       close_forced_rest()
     end
-    return -- forced modal takes total priority
+    return
   end
 
-  -- SOC just dropped to zero → show the big forced modal
+  -- SOC just dropped to zero → launch the huge forced modal
   if soc and soc <= 0 then
     create_forced_rest_modal(soc)
     return
   end
 
-  -- Regular warning / critical behavior (unchanged)
+  -- Regular warning/critical behavior (unchanged)
   if should_show_modal(soc) then
     M.create_centered_warning(soc)
   end
 end
 
--- Optional cleanup (call this on plugin unload if you want)
+-- Optional cleanup (call on plugin unload if desired)
 function M.cleanup()
   close_forced_rest()
 end
