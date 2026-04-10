@@ -80,12 +80,6 @@ function M.get_status()
   return cache.text
 end
 
-function M.setup(opts)
-  opts = opts or {}
-  config.load()
-  config.merge(opts)
-end
-
 function M.update_config(updates)
   config.merge(updates)
   vim.notify("BrainSOC: Config(s) updated.", vim.log.levels.INFO)
