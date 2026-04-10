@@ -115,7 +115,7 @@ function getEmoji(soc: number, isCoding: IntervalStatus): string {
   if (soc >= 70) return ":battery-plenty:";
   if (soc >= 40) return ":battery-half:";
   if (soc >= 15) return ":battery-few:";
-  if (soc > 0) return ":battery-little";
+  if (soc > 0) return ":battery-little:";
   return ":battery-empty:";
 }
 
