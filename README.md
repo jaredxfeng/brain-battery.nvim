@@ -26,7 +26,7 @@ return {
     DRAIN_RATE = 1.1,
     CODING_THRESHOLD_MINUTES = 2,
     RECHARGE_MINUTES_PER_BREAK = 25,
-  }, 
+  },
 }
 ```
 
@@ -42,12 +42,11 @@ return {
 
 `DRAIN_RATE` - multiplier to the minutes cumulated from wakatime. The multiplied result is then added to the current fatigue.
 
-`CODING_THRESHOLD_MINUTES` - if the coding minutes in the last 15 minute interval are less than this, then The Brain SOC sees this interval as "charging" or break. 
+`CODING_THRESHOLD_MINUTES` - if the coding minutes in the last 15 minute interval are less than this, then The Brain SOC sees this interval as "charging" or break.
 
 `RECHARGE_MINUTES_PER_BREAK` - the minutes that will be subtracted from your fatigue during a break.
 
 The current SOC then is just the difference between the capacity and the current fatigue in minutes.
-
 
 ## Commands
 

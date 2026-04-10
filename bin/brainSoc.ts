@@ -38,11 +38,6 @@ async function loadConfig(): Promise<void> {
   }
 }
 
-const capacityMinutes = CONFIG.capacityMinutes;
-const drainRate = CONFIG.drainRate;
-const codingThresholdMinutes = CONFIG.codingThresholdMinutes;
-const rechargeMinutesPerBreak = CONFIG.rechargeMinutesPerBreak;
-
 const STATE_FILE = path.join(os.homedir(), ".brain-waka-state.json");
 const SOC_FILE = path.join(os.homedir(), ".brain-soc.json");
 const WAKATIME_API_KEY = process.env.WAKATIME_API_KEY;
@@ -106,7 +101,8 @@ async function fetchTodayTotalSeconds(): Promise<number> {
 }
 
 function calculateBrainSOC(fatigue: number): number {
-  const soc = ((capacityMinutes - fatigue) / capacityMinutes) * 100;
+  const soc =
+    ((CONFIG.capacityMinutes - fatigue) / CONFIG.capacityMinutes) * 100;
   return Math.max(0, Math.min(100, soc));
 }
 
@@ -179,7 +175,7 @@ async function writeSOCFile(soc: number): Promise<void> {
     soc: Number(soc.toFixed(1)),
     percentage: `${Math.round(soc)}%`,
     timestamp: new Date().toISOString(),
-    fatigue_minutes: Number(capacityMinutes.toFixed(1)), // for plugin debugging if needed
+    fatigue_minutes: Number(CONFIG.capacityMinutes.toFixed(1)), // for plugin debugging if needed
   };
   await fs.writeFile(SOC_FILE, JSON.stringify(payload, null, 2));
   console.log(`Brain SOC written to ${SOC_FILE}`);
@@ -207,19 +203,19 @@ function updateState(
   currentTotalSeconds: number,
 ): void {
   const deltaMinutes = getDeltaMinutes(state, todayStr, currentTotalSeconds);
-  const isCodingInterval = deltaMinutes > codingThresholdMinutes;
+  const isCodingInterval = deltaMinutes > CONFIG.codingThresholdMinutes;
 
   if (isCodingInterval) {
-    const drain = deltaMinutes * drainRate;
+    const drain = deltaMinutes * CONFIG.drainRate;
     state.current_fatigue_minutes = Math.min(
       state.current_fatigue_minutes + drain,
-      capacityMinutes,
+      CONFIG.capacityMinutes,
     );
     state.current_interval_status = IntervalStatus.coding;
   } else {
     state.current_fatigue_minutes = Math.max(
       0,
-      state.current_fatigue_minutes - rechargeMinutesPerBreak,
+      state.current_fatigue_minutes - CONFIG.rechargeMinutesPerBreak,
     );
     state.current_interval_status = IntervalStatus.break;
   }
@@ -231,7 +227,7 @@ function updateState(
 async function runOnce() {
   await loadConfig();
   console.log("Config loaded");
-  console.log(`Configs: ${JSON.stringify(CONFIG)}`)
+  console.log(`Configs: ${JSON.stringify(CONFIG)}`);
   const state: State = await loadState();
   const todayStr = new Date().toISOString().split("T")[0];
   const currentTotalSeconds = await fetchTodayTotalSeconds();
