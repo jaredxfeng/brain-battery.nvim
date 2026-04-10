@@ -156,7 +156,7 @@ function M.lualine_component()
       end
 
       if soc <= 10 then
-        return { bg = "#e74c3c", fg = "#1e1e1e", gui = "bold" }
+        return { bg = "#5a0000", gui = "bold" }
       elseif soc <= 20 then
         return { bg = "#f1c40f", fg = "#1e1e1e", gui = "bold" }
       end
