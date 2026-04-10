@@ -235,16 +235,18 @@ async function runOnce() {
   const nowStr = new Date().toISOString();
   const shouldRefetch: boolean = is15MinutesFromLastRun(state, nowStr);
 
-  const currentTotalSeconds = shouldRefetch
-    ? await fetchTodayTotalSeconds()
-    : state.current_fatigue_minutes * SECONDS_IN_MINUTES;
-
-  if (shouldRefetch) updateState(state, nowStr, currentTotalSeconds);
+  if (shouldRefetch) {
+    const currentTotalSeconds = shouldRefetch
+      ? await fetchTodayTotalSeconds()
+      : state.current_fatigue_minutes * SECONDS_IN_MINUTES;
+    updateState(state, nowStr, currentTotalSeconds);
+    await saveState(state);
+  }
 
   const soc = calculateBrainSOC(state.current_fatigue_minutes);
   await writeSOCFile(soc);
-  await updateSlackStatus(soc, state);
-  await saveState(state);
+
+  if (shouldRefetch) await updateSlackStatus(soc, state);
 }
 
 runOnce().catch((err) => {
