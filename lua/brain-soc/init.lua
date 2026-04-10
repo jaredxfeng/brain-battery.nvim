@@ -73,13 +73,19 @@ local function readSocFile()
   cache.timestamp = os.time()
 end
 
-function M.get_status()
+local function ensure_fresh_cache()
   if os.time() - cache.timestamp > CACHE_TTL then
-    local ok = pcall(readSocFile)
-    if not ok then
-      cache.text = "🧠 ERR"
-    end
+    pcall(readSocFile)
   end
+end
+
+function M.get_soc()
+  ensure_fresh_cache()
+  return cache.soc
+end
+
+function M.get_status()
+  ensure_fresh_cache()
   return cache.text
 end
 
@@ -142,6 +148,20 @@ function M.lualine_component()
     M.get_status,
     cond = function()
       return vim.fn.filereadable(SOC_FILE) == 1
+    end,
+    color = function()
+      local soc = M.get_soc()
+      if not soc then
+        return {}
+      end
+
+      if soc <= 10 then
+        return { bg = "#e74c3c", fg = "#1e1e1e", gui = "bold" }
+      elseif soc <= 20 then
+        return { bg = "#f1c40f", fg = "#1e1e1e", gui = "bold" }
+      end
+
+      return {}
     end,
   }
 end
