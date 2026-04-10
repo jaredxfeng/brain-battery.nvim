@@ -5,7 +5,7 @@ local notify = require("brain-soc.notify")
 
 local CONFIG_DIR = vim.fn.expand("~/.config/brain-soc")
 local SOC_FILE = vim.fn.expand("~/.brain-soc.json")
-local cache = { soc = nil, text = "🧠 SOC --%", timestamp = 0 }
+local cache = { soc = nil, text = "🧠 --%", timestamp = 0 }
 local CACHE_TTL = 60 -- seconds (refreshes automatically)
 
 vim.api.nvim_create_user_command("BrainSOCConfig", function(opts)
@@ -54,19 +54,19 @@ local function readSocFile()
   local ok, file = pcall(vim.fn.readfile, SOC_FILE)
   if not ok or #file == 0 then
     cache.soc = nil
-    cache.text = "🧠 SOC ?%"
+    cache.text = "🧠 ?%"
     return
   end
 
   local ok_json, data = pcall(vim.json.decode, table.concat(file, "\n"))
   if not ok_json or not data or not data.soc then
     cache.soc = nil
-    cache.text = "🧠 SOC ?%"
+    cache.text = "🧠 ?%"
     return
   end
 
   cache.soc = tonumber(data.soc)
-  local raw_text = string.format("🧠 SOC %d%%", math.floor(cache.soc + 0.5))
+  local raw_text = string.format("🧠 %d%%", math.floor(cache.soc + 0.5))
   cache.text = raw_text:gsub("%%", "%%%%")
   cache.timestamp = os.time()
 end
