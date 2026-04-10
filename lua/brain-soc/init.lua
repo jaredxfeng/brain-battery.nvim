@@ -7,6 +7,48 @@ local SOC_FILE = vim.fn.expand("~/.brain-soc.json")
 local cache = { soc = nil, text = "🧠 SOC --%", timestamp = 0 }
 local CACHE_TTL = 60 -- seconds (refreshes automatically)
 
+vim.api.nvim_create_user_command("BrainSOCConfig", function(opts)
+  -- No arguments → show current config
+  if #opts.fargs == 0 then
+    vim.notify("Current config:\n" .. vim.inspect(config), vim.log.levels.INFO)
+    return
+  end
+
+  local updates = {}
+  for _, arg in ipairs(opts.fargs) do
+    local key, val_str = arg:match("^(%w+)=(.+)$")
+    if key and val_str then
+      local value = val_str
+      if val_str == "true" then
+        value = true
+      elseif val_str == "false" then
+        value = false
+      elseif tonumber(val_str) then
+        value = tonumber(val_str)
+      end
+      updates[key] = value
+    else
+      vim.notify("Invalid format. Use: key=value (e.g. param_one=newval)", vim.log.levels.WARN)
+    end
+  end
+
+  if next(updates) then
+    M.update_config(updates)  -- or M.update_config if inside the module
+  end
+end, {
+  nargs = "*",
+  desc = "Update BrainSOC configuration (key=value ...)",
+  complete = function(arglead)
+    local completions = {}
+    for _, k in ipairs(config.keys) do
+      if k:find(arglead, 1, true) then
+        table.insert(completions, k .. "=")
+      end
+    end
+    return completions
+  end,
+})
+
 local function readSocFile()
   local ok, file = pcall(vim.fn.readfile, SOC_FILE)
   if not ok or #file == 0 then
@@ -79,7 +121,10 @@ vim.api.nvim_create_user_command("BrainSOCSetup", function()
       )
     end)
   end)
-end, {})
+end, {
+  nargs = "*",
+  desc = "Setup The Brain SOC with secrets",
+})
 
 vim.defer_fn(function()
   local ok, err = pcall(readSocFile)
