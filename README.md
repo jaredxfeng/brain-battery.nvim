@@ -12,17 +12,17 @@ Powered by WakaTime + a 15-minute cron job that updates your Slack status too.
 
 ## Installation
 
-1. Create a file `~/.config/nvim/lua/plugins/brain-soc.lua` with these lines:
+1. Create a file `~/.config/nvim/lua/plugins/brain-battery.lua` with these lines:
 
 ```lua
 return {
-  "jaredxfeng/brain-soc.nvim",
+  "jaredxfeng/brain-battery.nvim",
   dependencies = {
     { "nvim-lualine/lualine.nvim", optional = true },
   }
   lazy = false,
   config = function(_, opts)
-    require("brain-soc")._opts = opts,
+    require("brain-battery")._opts = opts,
   end,
   opts = {
     capacity_minutes = 300,
@@ -42,18 +42,18 @@ return {
     opts.sections = opts.sections or {}
     opts.sections.lualine_x = vim.list_extend(
       opts.sections.lualine_x or {},
-      { require("brain-soc") }
+      { require("brain-battery") }
     )
     return opts
   end,
 }
 ```
 
-3. In your neovim, run `:BrainSOCSetup` to input your wakatime API key and the Slack OAuth Token of The Brain SOC Slack App.
+3. In your neovim, run `:BrainBatterySetup` to input your wakatime API key and the Slack OAuth Token of The Brain SOC Slack App.
 
-4. Add a line inside your `crontab -e`: `*/15 * * * * cd ~/.local/share/nvim/lazy/brain-soc.nvim/bin && ./run-brain-soc.sh`. Save and exit.
+4. Add a line inside your `crontab -e`: `*/15 * * * * cd ~/.local/share/nvim/lazy/brain-battery.nvim/bin && ./run-brain-battery.sh`. Save and exit.
 
-5. See `getEmoji()` in `brainSoc.ts`, this maps the current brain SOC to a battery emoji that you should also manually upload to your slack workspace.
+5. See `getEmoji()` in `brainBattery.ts`, this maps the current brain SOC to a battery emoji that you should also manually upload to your slack workspace.
 
 And you are done. Restart your neovim and continue to enjoy coding until it stops you!
 
@@ -71,6 +71,6 @@ The current SOC then is just the difference between the capacity and the current
 
 ## Commands
 
-`:BrainSOCSetup` - see above.
+`:BrainBatterySetup` - see above.
 
-`:BrainSOCConfig capacity_minutes=400 drain_rate=1.2` - overwrite default config.
+`:BrainBatterySetup capacity_minutes=400 drain_rate=1.2` - overwrite default config.
