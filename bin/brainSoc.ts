@@ -76,15 +76,11 @@ async function saveState(state: State): Promise<void> {
 }
 
 async function fetchTotalSeconds(
-  start?: string,
-  end?: string,
+  start: string,
+  end: string,
 ): Promise<number> {
-  const isFetchingToday = !start && !end;
-
-  const url = isFetchingToday
-    ? "https://wakatime.com/api/v1/users/current/summaries?start=today&end=today"
-    : `https://wakatime.com/api/v1/users/current/summaries?` +
-      `start=${encodeURIComponent(start!)}&end=${encodeURIComponent(end!)}`;
+  const url = `https://wakatime.com/api/v1/users/current/summaries?` +
+      `start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
 
   const auth = Buffer.from(`${WAKATIME_API_KEY}:`).toString("base64");
   const response = await fetch(url, {
@@ -98,11 +94,9 @@ async function fetchTotalSeconds(
       `WakaTime API error: ${response.status} ${response.statusText}`,
     );
   }
-  const result: any = await response.json();
 
-  return isFetchingToday
-    ? (result.data?.[0]?.grand_total?.total_seconds ?? 0)
-    : (result.cumulative_total?.seconds ?? 0);
+  const result: any = await response.json();
+  return result.cumulative_total?.seconds ?? 0;
 }
 
 function calculateBrainSOC(fatigue: number): number {
