@@ -31,12 +31,12 @@ interface Config {
 const MS_IN_MINUTES = 1000 * 60;
 const SECONDS_IN_MINUTES = 60;
 const MINUTES_IN_INTERVALS = 15;
-const CONFIG_DIR = path.join(os.homedir(), ".config", "brain-soc");
+const CONFIG_DIR = path.join(os.homedir(), ".config", "brain-battery");
 const ENV_FILE = path.join(CONFIG_DIR, ".env");
 dotenv.config({ path: ENV_FILE });
 const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
 const STATE_FILE = path.join(os.homedir(), ".brain-waka-state.json");
-const SOC_FILE = path.join(os.homedir(), ".brain-soc.json");
+const SOC_FILE = path.join(os.homedir(), ".brain-battery.json");
 const WAKATIME_API_KEY = process.env.WAKATIME_API_KEY;
 const SLACK_TOKEN = process.env.SLACK_TOKEN;
 
