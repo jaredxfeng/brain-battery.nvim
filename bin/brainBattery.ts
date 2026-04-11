@@ -36,7 +36,7 @@ const ENV_FILE = path.join(CONFIG_DIR, ".env");
 dotenv.config({ path: ENV_FILE });
 const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
 const STATE_FILE = path.join(os.homedir(), ".brain-waka-state.json");
-const SOC_FILE = path.join(os.homedir(), ".brain-battery.json");
+const BATTERY_FILE = path.join(os.homedir(), ".brain-battery.json");
 const WAKATIME_API_KEY = process.env.WAKATIME_API_KEY;
 const SLACK_TOKEN = process.env.SLACK_TOKEN;
 
@@ -107,7 +107,7 @@ async function fetchTotalSeconds(start: string, end: string): Promise<number> {
   return totalSeconds;
 }
 
-function calculateBrainSOC(fatigue: number): number {
+function calculateBrainBattery(fatigue: number): number {
   const soc =
     ((userConfig.capacityMinutes - fatigue) / userConfig.capacityMinutes) * 100;
   return Math.max(0, Math.min(100, soc));
@@ -202,14 +202,14 @@ export async function updateSlackStatus(
   }
 }
 
-async function writeSOCFile(soc: number): Promise<void> {
+async function writeBrainBatteryFile(soc: number): Promise<void> {
   const payload = {
     soc: Number(soc.toFixed(1)),
     percentage: `${Math.round(soc)}%`,
     timestamp: new Date().toISOString(),
     fatigue_minutes: Number(userConfig.capacityMinutes.toFixed(1)), // for plugin debugging if needed
   };
-  await fs.writeFile(SOC_FILE, JSON.stringify(payload, null, 2));
+  await fs.writeFile(BATTERY_FILE, JSON.stringify(payload, null, 2));
 }
 
 async function updateStateLive(state: State, now: string): Promise<void> {
@@ -298,8 +298,8 @@ async function runOnce(): Promise<void> {
     await saveState(state);
   }
 
-  const soc = calculateBrainSOC(state.current_fatigue_minutes);
-  await writeSOCFile(soc);
+  const soc = calculateBrainBattery(state.current_fatigue_minutes);
+  await writeBrainBatteryFile(soc);
 
   if (shouldRefetch) await updateSlackStatus(soc, state);
 }
