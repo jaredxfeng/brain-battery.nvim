@@ -205,9 +205,7 @@ export async function updateSlackStatus(
 async function writeBrainBatteryFile(soc: number): Promise<void> {
   const payload = {
     soc: Number(soc.toFixed(1)),
-    percentage: `${Math.round(soc)}%`,
     timestamp: new Date().toISOString(),
-    fatigue_minutes: Number(userConfig.capacityMinutes.toFixed(1)), // for plugin debugging if needed
   };
   await fs.writeFile(BATTERY_FILE, JSON.stringify(payload, null, 2));
 }
