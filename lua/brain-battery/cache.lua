@@ -1,8 +1,8 @@
 local M = {}
 
-local modal = require("brain-soc.modal")
+local modal = require("brain-battery.modal")
 
-local SOC_FILE = vim.fn.expand("~/.brain-soc.json")
+local SOC_FILE = vim.fn.expand("~/.brain-battery.json")
 local cache = { soc = nil, text = "🧠 --%", timestamp = 0 }
 local CACHE_TTL = 60 -- seconds
 

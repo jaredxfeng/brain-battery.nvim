@@ -70,7 +70,7 @@ end
 
 function M.create_centered_warning(soc)
   local is_critical = soc <= 10
-  local title = " The Brain SOC "
+  local title = " The Brain Battery "
   local hl_group = is_critical and "DiagnosticError" or "DiagnosticWarn"
 
   local lines = {

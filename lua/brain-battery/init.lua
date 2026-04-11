@@ -1,10 +1,10 @@
 local M = {}
 
-local config = require("brain-soc.config")
+local config = require("brain-battery.config")
 config.load()
 
-local cache = require("brain-soc.cache")
-local commands = require("brain-soc.commands")
+local cache = require("brain-battery.cache")
+local commands = require("brain-battery.commands")
 
 commands.setup()
 
@@ -29,7 +29,7 @@ end
 
 function M.update_config(updates)
   local new_config = config.merge(updates)
-  require("brain-soc.notify").info("Config(s) updated:\n" .. vim.inspect(new_config))
+  require("brain-battery.notify").info("Config(s) updated:\n" .. vim.inspect(new_config))
   -- TODO: rerender SOC % after updating config?
 end
 
@@ -37,7 +37,7 @@ function M.lualine_component()
   return {
     M.get_status,
     cond = function()
-      return vim.fn.filereadable(vim.fn.expand("~/.brain-soc.json")) == 1
+      return vim.fn.filereadable(vim.fn.expand("~/.brain-battery.json")) == 1
     end,
     color = function()
       local soc = M.get_soc()

@@ -1,12 +1,12 @@
 local M = {}
 
-local config = require("brain-soc.config")
-local notify = require("brain-soc.notify")
+local config = require("brain-battery.config")
+local notify = require("brain-battery.notify")
 
-local CONFIG_DIR = vim.fn.expand("~/.config/brain-soc")
+local CONFIG_DIR = vim.fn.expand("~/.config/brain-battery")
 
 function M.setup()
-  vim.api.nvim_create_user_command("BrainSOCConfig", function(opts)
+  vim.api.nvim_create_user_command("BrainBatteryConfig", function(opts)
     if #opts.fargs == 0 then
       notify.info("Current config:\n" .. vim.inspect(config.get()))
       return
@@ -33,11 +33,11 @@ function M.setup()
     end
 
     if next(updates) then
-      require("brain-soc").update_config(updates)
+      require("brain-battery").update_config(updates)
     end
   end, {
     nargs = "*",
-    desc = "Update BrainSOC configuration (key=value ...)",
+    desc = "Update BrainBattery configuration (key=value ...)",
     complete = function(arglead)
       local completions = {}
       for _, k in ipairs(config.keys or {}) do
@@ -49,7 +49,7 @@ function M.setup()
     end,
   })
 
-  vim.api.nvim_create_user_command("BrainSOCSetup", function()
+  vim.api.nvim_create_user_command("BrainBatterySetup", function()
     vim.ui.input({ prompt = "WakaTime API Key: " }, function(wakatime_token)
       if not wakatime_token or wakatime_token == "" then
         notify.warn("Setup cancelled")
@@ -71,15 +71,15 @@ function M.setup()
         }
         vim.fn.writefile(env_lines, CONFIG_DIR .. "/.env")
 
-        notify.info(".env and config created in ~/.config/brain-soc/")
+        notify.info(".env and config created in ~/.config/brain-battery/")
         notify.info(
-          "Add this line to your crontab (crontab -e):\n*/15 * * * * cd ~/.local/share/nvim/lazy/TheBrainSOC/bin && ./run-brain-soc.sh"
+          "Add this line to your crontab (crontab -e):\n*/15 * * * * cd ~/.local/share/nvim/lazy/brain-battery.nvim/bin && ./run-brain-battery.sh"
         )
       end)
     end)
   end, {
     nargs = "*",
-    desc = "Setup The Brain SOC with secrets",
+    desc = "Setup The Brain Battery with secrets",
   })
 end
 

@@ -5,7 +5,7 @@ local M = {}
 ---@param opts? table
 local function notify(msg, level, opts)
   opts = opts or {}
-  opts.title = "The Brain SOC"
+  opts.title = "The Brain Battery"
   vim.notify(msg, level, opts)
 end
 

@@ -1,6 +1,6 @@
 local M = {}
-local notify = require("brain-soc.notify")
-local CONFIG_DIR = vim.fn.expand("~/.config/brain-soc")
+local notify = require("brain-battery.notify")
+local CONFIG_DIR = vim.fn.expand("~/.config/brain-battery")
 local CONFIG_FILE = CONFIG_DIR .. "/config.json"
 
 M.keys = {
