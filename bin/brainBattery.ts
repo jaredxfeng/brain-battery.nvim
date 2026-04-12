@@ -64,8 +64,9 @@ async function loadState(): Promise<State> {
     const data = await fs.readFile(STATE_FILE, "utf-8");
     return JSON.parse(data);
   } catch {
+    const now = new Date().toISOString();
     return {
-      last_date_time: "",
+      last_date_time: now,
       current_fatigue_minutes: 0,
       current_interval_status: IntervalStatus.break,
       last_cumulative_seconds: 0,
@@ -285,7 +286,6 @@ async function runOnce(): Promise<void> {
   const now = new Date().toISOString();
   const minutesSinceLastCall = diffMinutes(state, now);
   const shouldRefetch: boolean =
-    state.last_date_time.length === 0 ||
     minutesSinceLastCall >= MINUTES_IN_INTERVALS;
   const isNewSession: boolean = minutesSinceLastCall > MINUTES_IN_INTERVALS;
 
