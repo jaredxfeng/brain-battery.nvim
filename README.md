@@ -7,7 +7,7 @@ Powered by WakaTime.
 
 - Periodically estimates your coding fatigue level from wakatime data.
 - Shows `🧠 87%` in your lualine.
-- Shows `Brain: 87%` in your Slack Status with a battery icon approximating the fill level.
+- Shows `Brain: 87%` in your Slack status with a battery icon approximating the fill level.
 - Pops up modals that remind, convince, and later force you to have a break.
 - Protects your manual Slack status (won't overwrite if you set a different emoji)
 
