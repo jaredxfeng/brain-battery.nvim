@@ -19,10 +19,11 @@ return {
   "jaredxfeng/brain-battery.nvim",
   dependencies = {
     { "nvim-lualine/lualine.nvim", optional = true },
-  }
-  lazy = false,
+  },
+  lazy = true,
+  event = "VeryLazy",
   config = function(_, opts)
-    require("brain-battery")._opts = opts,
+    require("brain-battery")._opts = opts
   end,
   opts = {
     capacity_minutes = 300,
@@ -39,6 +40,7 @@ return {
 return {
   "nvim-lualine/lualine.nvim",
   dependencies = { "jaredxfeng/brain-battery.nvim" },  -- ← this ensures correct load order
+  event = "VeryLazy",
   opts = function(_, opts)
     opts.sections = opts.sections or {}
     opts.sections.lualine_x = vim.list_extend(
@@ -48,6 +50,7 @@ return {
     return opts
   end,
 }
+
 ```
 
 3. In your neovim, run `:BrainBatterySetup` to input your wakatime API key and the Slack OAuth Token of The Brain SOC Slack App.
