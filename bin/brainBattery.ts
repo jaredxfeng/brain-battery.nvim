@@ -285,8 +285,7 @@ async function runOnce(): Promise<void> {
   const state: State = await loadState();
   const now = new Date().toISOString();
   const minutesSinceLastCall = diffMinutes(state, now);
-  const shouldRefetch: boolean =
-    minutesSinceLastCall >= MINUTES_IN_INTERVALS;
+  const shouldRefetch: boolean = minutesSinceLastCall >= MINUTES_IN_INTERVALS;
   const isNewSession: boolean = minutesSinceLastCall > MINUTES_IN_INTERVALS;
 
   if (shouldRefetch) {
