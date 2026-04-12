@@ -52,25 +52,31 @@ return {
 
 ```
 
-3. In your neovim, run `:BrainBatterySetup` to input your wakatime API key and the Slack OAuth Token of The Brain SOC Slack App.
+3. In your neovim, run `:BrainBatterySetup` to input your wakatime API key and the Slack OAuth Token of a Slack app that you will separately create. For how to create such a Slack app, see the section **Slack App Creation**.
 
 4. Add a line inside your `crontab -e`: `*/15 * * * * cd ~/.local/share/nvim/lazy/brain-battery.nvim/bin && ./run-brain-battery.sh`. Save and exit.
 
-5. See `getEmoji()` in `brainBattery.ts`, this maps the current brain SOC to a battery emoji that you should also manually upload to your slack workspace.
+5. See `getEmoji()` in `brainBattery.ts`, this maps the current brain battery level to a battery emoji that you should also manually upload to your slack workspace.
 
 And you are done. Restart your neovim and continue to enjoy coding until it stops you!
 
+## Slack App Creation
+1. Search for the "Your Apps" page on Slack web, click create new app -> from scratch -> name the app and select the workspace you want.
+2. Once created, go to the app settings, find the OAuth & Permissions from the left menu.
+3. Inside OAuth & Permissions, the "User OAuth Token" is the token you will input to `BrainBatterySetup`. Copy and save it.
+4. Still in OAuth & Permissions, scroll down to find the User Token Scopes section. Click "Add an OAuth Scope". Find and enable `users:read`, `users.profile:write`, and `users.profile:read`. You are now all set in Slack.
+ 
 ## Parameters in `opts`
 
 `capacity_minutes` - total capacity of your brain battery in minutes.
 
 `drain_rate` - multiplier to the minutes cumulated from wakatime. The multiplied result is then added to the current fatigue.
 
-`coding_threshold_minutes` - if the coding minutes in the last 15 minute interval are less than this, then The Brain SOC sees this interval as "charging" or break.
+`coding_threshold_minutes` - if the coding minutes in the last 15 minute interval are less than this, then The Brain Battery sees this interval as "charging" or break.
 
-`recharge_minutes_per_break` - the minutes that will be subtracted from your fatigue during a break.
+`recharge_minutes_per_break` - the minutes that will be added to your current battery during a break.
 
-The current SOC then is just the difference between the capacity and the current fatigue in minutes.
+The current SOC then is just the percentage remainder of capacity after subtracting the current fatigue in minutes.
 
 ## Commands
 
