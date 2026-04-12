@@ -76,4 +76,4 @@ The current SOC then is just the difference between the capacity and the current
 
 `:BrainBatterySetup` - see above.
 
-`:BrainBatterySetup capacity_minutes=400 drain_rate=1.2` - overwrite default config.
+`:BrainBatteryConfig capacity_minutes=400 drain_rate=1.2` - overwrite default config.
