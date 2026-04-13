@@ -9,7 +9,7 @@ Powered by WakaTime.
 - Shows `🧠 xx%` in your lualine: <img width="789" height="84" alt="image" src="https://github.com/user-attachments/assets/8ebc5f19-a0d9-459c-8314-a7343e7f54e2" />
 - Shows `Brain: xx%` in your Slack status with a battery icon approximating the fill level.
   
-<img width="252" height="164" alt="image" src="https://github.com/user-attachments/assets/29afce64-70be-4bd2-8209-b6686632a023" />
+  <img width="252" height="164" alt="image" src="https://github.com/user-attachments/assets/29afce64-70be-4bd2-8209-b6686632a023" />
 
 - Pops up modals that remind, convince, and later force you to have a break.
 - Protects your manual Slack status (won't overwrite if you set a different emoji)
